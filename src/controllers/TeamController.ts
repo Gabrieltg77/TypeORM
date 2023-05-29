@@ -27,7 +27,7 @@ class TeamController {
         return res.json(team);
     }
     else {
-      return res.json({ error: "Usuário não localizado" });
+      return res.json({ error: "Time não localizado" });
     }
   }
 
@@ -59,36 +59,23 @@ class TeamController {
 
   // o usuário pode atualizar somente os seus dados
   public async update(req: Request, res: Response): Promise<Response> {
-    const { mail, password } = req.body;
-    // obtém o id do usuário que foi salvo na autorização na middleware
-    const { id } = res.locals;
+    const { id, name } = req.body;
     const team: any = await AppDataSource.manager.findOneBy(Team, { id }).catch((e) => {
       return { error: "Identificador inválido" };
     })
     if (team && team.id) {
-      if (mail !== "") {
-        team.mail = mail;
-      }
-      if (password !== "") {
-        team.password = password;
-      }
+      team.name = name;
       const r = await AppDataSource.manager.save(Team, team).catch((e) => {
         // testa se o e-mail é repetido
-        if (/(mail)[\s\S]+(already exists)/.test(e.detail)) {
-          return ({ error: 'e-mail já existe' });
-        }
+        if (e.message === 'SQLITE_CONSTRAINT: UNIQUE constraint failed: teams.name') {
+          return {error: 'O nome já existe.'}
+      } 
         return e;
       })
-      if (!r.error) {
-        return res.json({ id: team.id, mail: team.mail });
-      }
       return res.json(r);
     }
-    else if (team && team.error) {
-      return res.json(mail)
-    }
     else {
-      return res.json({ error: "Usuário não localizado" });
+      return res.json({ error: "Time não localizado" });
     }
   }
   public async deleteTeam(req: Request, res: Response): Promise<Response> {

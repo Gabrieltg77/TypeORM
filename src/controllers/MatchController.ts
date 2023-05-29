@@ -54,7 +54,7 @@ class MatchController {
         return res.json(match);
     }
     else {
-      return res.json({ error: "Usuário não localizado" });
+      return res.json({ error: "Time não localizado" });
     }
   }
 
@@ -99,6 +99,7 @@ class MatchController {
     });
     match.host = host;
     match.visitor = visitor;
+    match.date = date;
     if (match && match.id) {
       const r = await AppDataSource.manager.save(Match, match).catch((e) => {
         return e;
@@ -109,7 +110,7 @@ class MatchController {
       return res.json(r);
     }
     else {
-      return res.json({ error: "Usuário não localizado" });
+      return res.json({ error: "Time não localizado" });
     }
   }
   public async deleteMatch(req: Request, res: Response): Promise<Response> {

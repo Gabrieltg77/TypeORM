@@ -5,6 +5,7 @@ const routes = Router()
 
 routes.get("/team/:search?", Team.listAll);
 routes.post("/team", Team.create);
+routes.put("/team", Team.update);
 routes.delete("/team", Team.deleteTeam);
 
 routes.post("/match", Match.create);
