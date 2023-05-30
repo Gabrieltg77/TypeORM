@@ -13,12 +13,14 @@ class TeamController {
       .getRepository(Team)
       .createQueryBuilder("team")
       .select()
-      .where("name LIKE :search",  { search: `${search}%` })
+      .where("name LIKE :search",  { search: `%${search}%` })
+      .orderBy("team.name", "ASC")
       .getMany(): 
     team = await AppDataSource
       .getRepository(Team)
       .createQueryBuilder("team")
       .select()
+      .orderBy("team.name", "ASC")
       .getMany();
       console.log(team);
       
