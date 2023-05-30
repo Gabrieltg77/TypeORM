@@ -19,10 +19,10 @@ const AppDataSource = new DataSource({
 
 //versão para PostgreSQL
 const AppDataSource = new DataSource({
-    database: 'bdaula', 
+    database: 'icctdqgh', 
     type: "postgres", 
     host: 'silly.db.elephantsql.com', 
-    port: 80,
+    port: 5432,
     username: 'icctdqgh',
     password:'Dgfje4BSRzhm-LTEVCzscGmgMrWUHSTQ',
     synchronize: false, 
@@ -30,7 +30,7 @@ const AppDataSource = new DataSource({
     entities: ["src/entities/*.ts"], 
     migrations: ["src/migrations/*.ts"],
     subscribers: [],
-    maxQueryExecutionTime: 2000 // 2 seg.
+    maxQueryExecutionTime: 4000 // 2 seg.
 });
 
 // https://orkhan.gitbook.io/typeorm/docs/data-source
