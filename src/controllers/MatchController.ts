@@ -25,7 +25,7 @@ class MatchController {
       )
       .select(["match.id", "match.date", "match.visitor","match.host", "host.id", "host.name", "visitor.id", "visitor.name"])
       .where("host.id = :id or visitor.id = :id",  { id: `${id}` })
-      .orderBy("match.date", "ASC")
+      .orderBy("match.date", "DESC")
       .skip(offset)
       .take(limit)
       .getMany():
@@ -41,7 +41,7 @@ class MatchController {
         "host"
       )
       .select(["match.id", "match.date", "match.visitor","match.host", "host.id", "host.name", "visitor.id", "visitor.name"])
-      .orderBy("match.date", "ASC")
+      .orderBy("match.date", "DESC")
       .skip(offset)
       .take(limit)
       .getMany();
@@ -60,52 +60,70 @@ class MatchController {
 
   public async create(req: Request, res: Response): Promise<Response> {
     const { idhost, idvisitor, date } = req.body;
-    //verifica se foram fornecidos os parâmetros
     const teamRepository: any = AppDataSource.getRepository(Team);
     const host: any = await teamRepository
     .createQueryBuilder("team")
-    .select(['team.id'])
-    .where(idhost)
+    .select(['team.id', 'team.name'])
+    .where("id = :id",  { id: `${idhost}` })
     .getOne();
+    
     const visitor: any = await teamRepository
     .createQueryBuilder("team")
-    .select(['team.id'])
-    .where(idvisitor)
+    .select(['team.id', 'team.name'])
+    .where("id = :id",  { id: `${idvisitor}` })
     .getOne();
     const obj = new Match();
-    obj.host = host;
+    if(host) {
+      obj.host = host
+      }else{
+      return res.status(302).json({error: "Mandante desconhecido"});
+      }
+      if(visitor) {
+        obj.visitor = visitor;
+        }else{
+        return res.status(302).json({error: "Visitante desconhecido"});
+        }
     obj.date = date;
-    obj.visitor = visitor;
-    // o hook BeforeInsert não é disparado com AppDataSource.manager.save(User,JSON),
-    // mas é disparado com AppDataSource.manager.save(User,objeto do tipo User)
-    // https://github.com/typeorm/typeorm/issues/5493
     const match: any = await AppDataSource.manager.save(Match, obj).catch((e) => {
       return { error: e.message };
     })
+    console.log(visitor);
+    
     return res.json(match);
   }
 
-  // o usuário pode atualizar somente os seus dados
   public async update(req: Request, res: Response): Promise<Response> {
     const { id, idhost, idvisitor, date } = req.body;
     const match: any = await AppDataSource.manager.findOneBy(Match, { id }).catch((e) => {
+      
       return { error: "Identificador inválido" };
     })
-    const host = await AppDataSource.manager.findOneBy(Team, { id: idhost }).catch((e) => {
-      return  {error: "Mandante desconhecido"} ;
-    });
-    const visitor = await AppDataSource.manager.findOneBy(Team, { id: idvisitor }).catch((e) => {
-      return  {error: "Visitante desconhecido"} ;
-    });
-    match.host = host;
-    match.visitor = visitor;
+    const host = await AppDataSource.manager.findOneBy(Team, { id: idhost });
+    
+    const visitor = await AppDataSource.manager.findOneBy(Team, { id: idvisitor });
+    if(host) {
+    match.host = host
+    }else{
+    return res.status(302).json({error: "Mandante desconhecido"});
+    }
+
+    if(visitor) {
+      match.visitor = visitor;
+      }else{
+      return res.status(302).json({error: "Visitante desconhecido"});
+      }
+
+
     match.date = date;
     if (match && match.id) {
       const r = await AppDataSource.manager.save(Match, match).catch((e) => {
+        
         return e;
       })
-      if (!r.error) {
-        return res.json({ id: match.id});
+      if (r.error) {
+        console.log(r.error);
+        
+        return res.json(r.error);
       }
       return res.json(r);
     }
@@ -122,13 +140,13 @@ class MatchController {
       const MatchRepository: any = await AppDataSource.getRepository(Match);
       const match: any = await MatchRepository
       .createQueryBuilder("Match")
-      .select(['match.id'])
-      .where(id)
+      .select(['Match.id'])
+      .where("Match.id = :id",  { id })
       .getOne();
       console.log(match);
       
       if (!match) {
-        return res.status(404).send({ message: "id não localizado" });
+       // return res.status(404).send({ message: "id não localizado" });
       }
 
       const result = await MatchRepository.delete(id);

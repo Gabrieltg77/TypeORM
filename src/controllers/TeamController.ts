@@ -13,7 +13,7 @@ class TeamController {
       .getRepository(Team)
       .createQueryBuilder("team")
       .select()
-      .where("name LIKE :search",  { search: `%${search}%` })
+      .where("name LIKE :search",  { search: `${search}%` })
       .getMany(): 
     team = await AppDataSource
       .getRepository(Team)
@@ -33,31 +33,23 @@ class TeamController {
 
   public async create(req: Request, res: Response): Promise<Response> {
     const { name } = req.body;
-    //verifica se foram fornecidos os parâmetros
     const obj = new Team();
     obj.name = name;
-    // o hook BeforeInsert não é disparado com AppDataSource.manager.save(User,JSON),
-    // mas é disparado com AppDataSource.manager.save(User,objeto do tipo User)
-    // https://github.com/typeorm/typeorm/issues/5493
     const team: any = await AppDataSource.manager.save(Team, obj).catch((e) => {
-      // testa se o e-mail é repetido
-      if (e.message === 'SQLITE_CONSTRAINT: UNIQUE constraint failed: teams.name') {
+      if (e.message === 'duplicate key value violates unique constraint \"UQ_48c0c32e6247a2de155baeaf980\"') {
         return {error: 'O nome já existe.'}
     } 
       return { error: e.message };
     })
     if (team.id) {
-      // cria um token codificando o objeto {idteam,mail}
-      // retorna o token para o cliente
       return res.json({
         id: team.id,
-        mail: team.mail,
+        name: team.name,
       });
     }
-    return res.json(team);
+    //return res.json(team);
   }
 
-  // o usuário pode atualizar somente os seus dados
   public async update(req: Request, res: Response): Promise<Response> {
     const { id, name } = req.body;
     const team: any = await AppDataSource.manager.findOneBy(Team, { id }).catch((e) => {
@@ -66,11 +58,10 @@ class TeamController {
     if (team && team.id) {
       team.name = name;
       const r = await AppDataSource.manager.save(Team, team).catch((e) => {
-        // testa se o e-mail é repetido
-        if (e.message === 'SQLITE_CONSTRAINT: UNIQUE constraint failed: teams.name') {
+        if (e.message === 'duplicate key value violates unique constraint \"UQ_48c0c32e6247a2de155baeaf980\"') {
           return {error: 'O nome já existe.'}
       } 
-        return e;
+        return e.message;
       })
       return res.json(r);
     }
@@ -88,12 +79,11 @@ class TeamController {
       const team: any = await teamRepository
       .createQueryBuilder("team")
       .select(['team.id'])
-      .where(id)
+      .where("id = :id",  { id })
       .getOne();
-      console.log(team);
       
       if (!team) {
-        return res.status(404).send({ message: "id não localizado" });
+       // return res.status(404).send({ message: "id não localizado" });
       }
 
       const result = await teamRepository.delete(id);
